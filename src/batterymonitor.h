@@ -50,6 +50,9 @@
 #ifndef BATTERY_SHIELD_R2
 #define BATTERY_SHIELD_R2 220.0
 #endif
+#ifndef BAT_ADC_ATTEN
+#define BAT_ADC_ATTEN ADC_11db
+#endif
 
 #if BATTERY_MONITOR == BAT_EXTERNAL
 // Wemos D1 Mini has an internal Voltage Divider with R1=100K and R2=220K > this

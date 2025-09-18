@@ -65,6 +65,8 @@
 #define LED_INVERTED true
 #define BATTERY_SHIELD_R1 1
 #define BATTERY_SHIELD_R2 1
+#define BATTERY_SHIELD_RESISTANCE 0
+#define BAT_ADC_ATTEN ADC_11db
 
 // ------------------------------
 
