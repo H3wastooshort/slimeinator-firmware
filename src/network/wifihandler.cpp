@@ -26,6 +26,8 @@
 #include "esp_wifi.h"
 #endif
 
+#include "../FSHelper.h"
+
 namespace SlimeVR {
 
 void WiFiNetwork::reportWifiProgress() {
@@ -48,12 +50,30 @@ bool WiFiNetwork::isConnected() const {
 	return wifiState == WiFiReconnectionStatus::Success;
 }
 
+const char *WIFI_DIR = "/wifi";
+const char *SSID_FILE = "/wifi/ssid";
+const char *PASS_FILE = "/wifi/pass";
+
+bool WiFiNetwork::storeWiFiCredentials(const char* SSID, const char* pass) {
+	if (!SlimeVR::Utils::ensureDirectory(WIFI_DIR)) return false;
+
+	auto f_ssid = SlimeVR::Utils::openFile(SSID_FILE, "w");
+	auto f_pass = SlimeVR::Utils::openFile(PASS_FILE, "w");
+	f_ssid.write(reinterpret_cast<const uint8_t*>(SSID), strlen(SSID)+1);
+	f_pass.write(reinterpret_cast<const uint8_t*>(pass), strlen(pass)+1);
+	f_ssid.close();
+	f_pass.close();
+
+	return true;
+}
+
 void WiFiNetwork::setWiFiCredentials(const char* SSID, const char* pass) {
 	wifiProvisioning.stopProvisioning();
 	WiFi.persistent(true);
 #ifdef ESP32
 	esp_wifi_set_storage(WIFI_STORAGE_FLASH);
 #endif
+	storeWiFiCredentials(SSID,pass);
 	tryConnecting(false, SSID, pass);
 	retriedOnG = false;
 	// Reset state, will get back into provisioning if can't connect
@@ -69,11 +89,6 @@ void WiFiNetwork::setUp() {
 	wifiHandlerLogger.info("Setting up WiFi");
 	WiFi.mode(WIFI_STA);
 	WiFi.hostname("SlimeVR FBT Tracker");
-	wifiHandlerLogger.info(
-		"Loaded credentials for SSID '%s' and pass length %d",
-		WiFi.SSID().c_str(),
-		WiFi.psk().length()
-	);
 
 	trySavedCredentials();
 
@@ -251,8 +266,43 @@ void WiFiNetwork::showConnectionAttemptFailed(const char* type) const {
 	);
 }
 
+#define MAX_WIFI_CRED_LEN 64
+
+bool WiFiNetwork::loadWiFiCredentials(char* SSID, char* pass) {
+	if (!SlimeVR::Utils::ensureDirectory(WIFI_DIR)) return false;
+
+	auto f_ssid = SlimeVR::Utils::openFile(SSID_FILE, "r");
+	auto f_pass = SlimeVR::Utils::openFile(PASS_FILE, "r");
+	if (f_ssid.size() <= 0) return false;
+	//if (f_pass.size() <= 0) return false;
+	f_ssid.read(reinterpret_cast<uint8_t*>(SSID), f_ssid.size());
+	f_pass.read(reinterpret_cast<uint8_t*>(pass), f_pass.size());
+	f_ssid.close();
+	f_pass.close();
+
+	return true;
+}
+
 bool WiFiNetwork::trySavedCredentials() {
-	if (WiFi.SSID().length() == 0) {
+	char SSID_buf[MAX_WIFI_CRED_LEN];
+	char pass_buf[MAX_WIFI_CRED_LEN];
+	char *SSID = reinterpret_cast<char*>(SSID_buf);
+	char *pass = reinterpret_cast<char*>(pass_buf);
+
+	if (!loadWiFiCredentials(SSID,pass)) {
+		wifiHandlerLogger.debug("Skipping saved credentials attempt on failed load..."
+		);
+		wifiState = WiFiReconnectionStatus::HardcodeAttempt;
+		return false;
+	}
+
+	wifiHandlerLogger.info(
+		"Loaded credentials for SSID '%s' and pass length %d",
+		SSID,
+		strlen(pass)
+	);
+
+	if (strlen(SSID) == 0) {
 		wifiHandlerLogger.debug("Skipping saved credentials attempt on 0-length SSID..."
 		);
 		wifiState = WiFiReconnectionStatus::HardcodeAttempt;
@@ -272,13 +322,12 @@ bool WiFiNetwork::trySavedCredentials() {
 
 		retriedOnG = true;
 		wifiHandlerLogger.debug("Trying saved credentials with PHY Mode G...");
-		return tryConnecting(true);
+		return tryConnecting(true, SSID, pass);
 	}
 
 	retriedOnG = false;
-
 	wifiState = WiFiReconnectionStatus::SavedAttempt;
-	return tryConnecting();
+	return tryConnecting(false, SSID, pass);
 }
 
 bool WiFiNetwork::tryHardcodedCredentials() {

@@ -53,6 +53,8 @@ public:
 	void setUp();
 	void upkeep();
 	void setWiFiCredentials(const char* SSID, const char* pass);
+	bool storeWiFiCredentials(const char* SSID, const char* pass);
+	bool loadWiFiCredentials(char* SSID, char* pass);
 	static IPAddress getAddress();
 	WiFiReconnectionStatus getWiFiState();
 
