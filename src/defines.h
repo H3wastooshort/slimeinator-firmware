@@ -53,7 +53,6 @@
 //   BAT_MCP3021 for external ADC connected over I2C
 #define BATTERY_MONITOR BAT_EXTERNAL
 
-
 // --- OVERRIDES FOR DEFAULT PINS
 
 #define PIN_IMU_SDA 4
@@ -70,4 +69,5 @@
 
 // ------------------------------
 
+#define POWERSAVING_MODE POWER_SAVING_MINIMAL
 
