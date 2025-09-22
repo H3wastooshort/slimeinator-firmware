@@ -62,6 +62,10 @@ void setup() {
 	Serial.begin(serialBaudRate);
 	globalTimer = timer_create_default();
 
+#ifdef BOOT_DELAY
+	delay(5000);
+#endif
+
 	Serial.println();
 	Serial.println();
 	Serial.println();
