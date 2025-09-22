@@ -51,6 +51,9 @@ bool WiFiNetwork::isConnected() const {
 void WiFiNetwork::setWiFiCredentials(const char* SSID, const char* pass) {
 	wifiProvisioning.stopProvisioning();
 	WiFi.persistent(true);
+#ifdef ESP32
+	esp_wifi_set_storage(WIFI_STORAGE_FLASH);
+#endif
 	tryConnecting(false, SSID, pass);
 	retriedOnG = false;
 	// Reset state, will get back into provisioning if can't connect
