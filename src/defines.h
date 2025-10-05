@@ -45,7 +45,6 @@
 // Set I2C address here or directly in IMU_DESC_ENTRY for each IMU used
 // If not set, default address is used based on the IMU and Sensor ID
 #define PRIMARY_IMU_ADDRESS_ONE 0x68
-#define SECONDARY_IMU_ADDRESS_TWO 0x69
 
 // Battery monitoring options (comment to disable):
 //   BAT_EXTERNAL for ADC pin,
@@ -71,3 +70,4 @@
 
 #define POWERSAVING_MODE POWER_SAVING_MINIMAL
 
+//#define BOOT_DELAY
